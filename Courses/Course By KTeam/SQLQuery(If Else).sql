@@ -1,0 +1,36 @@
+﻿USE HowKteam
+GO
+
+DECLARE @SoLuongGiaVien INT = (SELECT COUNT(*) FROM dbo.GIAOVIEN)
+DECLARE @LuongTrungBinh INT = (SELECT SUM(LUONG) / @SoLuongGiaVien FROM dbo.GIAOVIEN)
+PRINT @LuongTrungBinh
+
+DECLARE @MaGV CHAR(10) = '001'
+DECLARE @LuongMaGV INT = (SELECT LUONG FROM dbo.GIAOVIEN WHERE MAGV = @MaGV)
+
+IF @LuongMaGV > @LuongTrungBinh
+	BEGIN
+		PRINT @LuongMaGV
+		PRINT @LuongTrungBinh
+		PRINT N'Lớn hơn'
+	END
+ELSE
+	BEGIN
+		PRINT N'Nhỏ hơn'
+	END
+GO
+
+DECLARE @SoLuongGiaVien INT = (SELECT COUNT(*) FROM dbo.GIAOVIEN)
+DECLARE @LuongTrungBinh INT = (SELECT SUM(LUONG) / @SoLuongGiaVien FROM dbo.GIAOVIEN)
+
+DECLARE @Luong INT = 1500
+
+IF @Luong > @LuongTrungBinh
+	BEGIN
+		UPDATE dbo.GIAOVIEN SET LUONG = @Luong
+	END
+ELSE
+	BEGIN
+		UPDATE dbo.GIAOVIEN SET LUONG = @Luong
+		WHERE PHAI = N'Nữ'
+	END
