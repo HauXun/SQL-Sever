@@ -1,0 +1,155 @@
+﻿USE master
+
+-- Tạo database
+CREATE DATABASE QuanLySinhVien
+GO
+
+-- DROP DATABASE QuanLySinhVien
+
+USE QuanLySinhVien
+GO
+
+CREATE TABLE SinhVien
+(
+	MSSV CHAR(5) NOT NULL,
+	HOTEN VARCHAR(50)
+)
+GO
+
+CREATE TABLE LopHoc
+(
+	MaLop CHAR(5) NOT NULL,
+	TenLop VARCHAR(50)
+)
+GO
+
+ALTER TABLE SinhVien
+ADD CONSTRAINT PK_SINHVIEN
+PRIMARY KEY (MSSV)
+GO
+
+CREATE TABLE MonHoc
+(
+	MaMH CHAR(5),
+	TenMH NVARCHAR(20),
+	CONSTRAINT PK_MONHOC
+	PRIMARY KEY (MaMH)
+)
+GO
+
+CREATE TABLE GiaoVien
+(
+	MAGV CHAR(5),
+	HOTEN VARCHAR(50),
+	GioiTinh  VARCHAR(5) CHECK (GioiTinh IN ('Nam', N'Nữ'))
+	PRIMARY KEY (MAGV)
+)
+GO
+
+ALTER TABLE GiaoVien
+ALTER COLUMN GioiTinh NVARCHAR(5)
+GO
+
+ALTER TABLE GiaoVien
+ADD CONSTRAINT CK_GIOITINH
+CHECK (GioiTinh IN ('Nam', N'Nữ'))
+GO
+
+ALTER TABLE GiaoVien
+DROP CONSTRAINT CK_GIOITINH
+GO
+
+ALTER TABLE GiaoVien
+DROP COLUMN GioiTinh
+GO
+
+DROP TABLE MonHoc
+GO
+
+sp_help SINHVIEN
+GO
+
+CREATE TABLE Khoa
+(
+	MaKhoa CHAR(5),
+	TenKhoa VARCHAR(50),
+	PRIMARY KEY (MaKhoa)
+)
+GO
+
+ALTER TABLE GiaoVien
+ADD MAKHOA CHAR(5)
+GO
+
+ALTER TABLE GiaoVien
+ADD CONSTRAINT FK_GV_KHOA
+FOREIGN KEY (MAKHOA)
+REFERENCES Khoa (MaKhoa)
+GO
+
+INSERT INTO Khoa (MaKhoa, TenKhoa)
+VALUES ('001', 'Toan Tin')
+INSERT INTO Khoa (MaKhoa, TenKhoa)
+VALUES ('002', 'Toan 2')
+INSERT INTO Khoa (MaKhoa, TenKhoa)
+VALUES ('003', 'Toan 3')
+INSERT INTO Khoa
+VALUES ('004', 'Toan 3')
+INSERT INTO Khoa (TenKhoa, MaKhoa)
+VALUES ('Toan 5', '005')
+GO
+
+INSERT INTO SinhVien (MSSV, HOTEN)
+VALUES ('001', 'Nguyễn Văn Tèo')
+INSERT INTO SinhVien (MSSV, HOTEN)
+VALUES ('001', N'Nguyễn Văn Tèo')
+GO
+
+ALTER TABLE SinhVien
+ADD NGAYSINH DATE
+GO
+
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('003', N'Nguyễn Thị Ti', '12/20/2016')
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('004', N'Nguyễn Thị Ti', '20161010')
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('005', N'Nguyễn Thị Ti', '20161015')
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('006', N'Nguyễn Thị Ti', '2016-10-15')
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('007', N'Nguyễn Thị Ti', '20161201')
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('008', N'Nguyễn Thị Ti', NULL)
+INSERT INTO SinhVien (MSSV, HOTEN, NGAYSINH)
+VALUES ('009', N'Nguyễn Thị Ti', NULL)
+GO
+
+INSERT INTO LopHoc (MaLop, TenLop)
+VALUES ('001', 'Lop 1')
+INSERT INTO LopHoc (MaLop, TenLop)
+VALUES ('002', NULL)
+INSERT INTO LopHoc (MaLop, TenLop)
+VALUES (NULL, 'Lop 3')
+GO
+
+INSERT INTO LopHoc (MaLop, TenLop)
+VALUES ('test', 'test')
+GO
+
+SELECT TenKhoa, MaKhoa FROM Khoa
+-- SELECT: Cái gì?
+-- FROM: Ở đâu?
+-- WHERE: Khi điều gì xảy ra?
+
+SELECT * FROM Khoa WHERE MaKhoa = 'test'
+
+SELECT * FROM SinhVien
+-- WHERE Year(NGAYSINH) != 2016
+WHERE YEAR(NGAYSINH) <> 2015
+-- Day()
+-- Year()
+
+UPDATE SinhVien
+SET HOTEN = 'Dần nè!'
+WHERE DAY(NGAYSINH) = 15
