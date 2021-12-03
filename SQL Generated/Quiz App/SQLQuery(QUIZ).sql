@@ -606,13 +606,53 @@ UPDATE [dbo].[Subject]
 END
 GO
 
-CREATE PROC USP_DeleteSubject
- @SubjectID varchar(50)
- AS
- BEGIN
-     DELETE dbo.Subject WHERE SubjectID = @SubjectID
- END
- GO
+ALTER PROC USP_DeleteSubject
+@SubjectID varchar(50)
+AS
+BEGIN
+	DECLARE @SubjectName NVARCHAR(200)
+	DECLARE @error NVARCHAR(120)
+	DECLARE @ErrorSeverity INT
+	DECLARE @ErrorState INT
+
+	SELECT @SubjectName = S.SubjectName FROM dbo.Subject S
+	WHERE S.SubjectID = @SubjectID
+	
+	IF EXISTS (SELECT * FROM dbo.Question WHERE @SubjectID = SubjectID)
+	OR EXISTS (SELECT * FROM dbo.Exam WHERE @SubjectID = SubjectID)
+	OR EXISTS (SELECT * FROM dbo.User_QuizTimes WHERE @SubjectID = SubjectID)
+	OR EXISTS (SELECT * FROM dbo.EP_TFMark WHERE @SubjectID = SubjectID)
+	OR EXISTS (SELECT * FROM dbo.EduProg WHERE @SubjectID = SubjectID)
+	BEGIN
+		BEGIN TRY
+			-- RAISERROR with severity 11-19 will cause execution to 
+			-- jump to the CATCH block.
+			SELECT @error = CONCAT(N'Không thể xóa môn "', @SubjectName, N'" vì tồn tại dữ liệu ràng buộc liên quan!');
+			RAISERROR (@error, -- Message text.
+						16, -- Severity.
+						1 -- State. 
+						)
+			ROLLBACK TRAN
+		END TRY
+		BEGIN CATCH
+			SELECT @error = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+
+			-- Use RAISERROR inside the CATCH block to return error
+			-- information about the original error that caused
+			-- execution to jump to the CATCH block.
+			RAISERROR (@error, -- Message text.
+						@ErrorSeverity, -- Severity.
+						@ErrorState -- State.
+						)
+			ROLLBACK TRAN
+		END CATCH;
+	END
+	ELSE
+	BEGIN
+		DELETE dbo.Subject WHERE SubjectID = @SubjectID
+	END
+END
+GO
 
 CREATE PROC USP_SearchSubject
 @keyword NVARCHAR(200)
@@ -700,6 +740,7 @@ BEGIN
 	DECLARE @CourseID VARCHAR(50)
 	DECLARE @FacultyID VARCHAR(50)
 	DECLARE @SemesterID TINYINT
+	DECLARE @error NVARCHAR(120)
 
 	IF EXISTS (SELECT * FROM Inserted) AND NOT EXISTS (SELECT * FROM Deleted)
 	BEGIN
@@ -1006,6 +1047,14 @@ AS
 BEGIN
 	UPDATE dbo.User_QuizTimes SET QuizTimes -= 1 FROM dbo.User_QuizTimes
 	WHERE UserID = @UserID AND ExamID = @ExamID AND SubjectID = @SubjectID AND QuizTimes > 0
+END
+GO
+
+CREATE PROC USP_GetExamByIDSubject
+@SubjectID VARCHAR(50)
+AS
+BEGIN
+    SELECT * FROM dbo.Exam WHERE @SubjectID = SubjectID
 END
 GO
 
@@ -1757,7 +1806,7 @@ BEGIN
 END
 GO
 
-CREATE TRIGGER TG_TestHistory ON dbo.TestHistory
+ALTER TRIGGER TG_TestHistory ON dbo.TestHistory
 FOR	INSERT
 AS
 BEGIN
@@ -1766,7 +1815,7 @@ BEGIN
 	DECLARE @TestFormID VARCHAR(50)
 	DECLARE @Mark FLOAT
 
-	SELECT @SubjectID = S.SubjectID, @UserID = I.UserID, @TestFormID = Ex.TestFormID, @Mark = (I.Mark * Ex.PercentMark / 100) FROM Inserted I
+	SELECT @SubjectID = S.SubjectID, @UserID = I.UserID, @TestFormID = Ex.TestFormID, @Mark = ROUND(CAST((I.Mark * Ex.PercentMark / 100) AS FLOAT), 2) FROM Inserted I
 	JOIN dbo.Exam Ex
 	ON Ex.ExamID = I.ExamID AND Ex.SubjectID = I.SubjectID
 	JOIN dbo.TestForm TFrm
@@ -1906,7 +1955,7 @@ GO
 
 ----------------------------------------- EP_TFMark ---------------------------------------
 
-CREATE TRIGGER TG_EPTF ON dbo.EP_TFMark
+ALTER TRIGGER TG_EPTF ON dbo.EP_TFMark
 FOR UPDATE
 AS
 BEGIN
@@ -1919,7 +1968,7 @@ BEGIN
 	AND TestFormID = 'CK' AND Mark IS NOT NULL)
 	BEGIN
 		DECLARE @Mark FLOAT
-		SELECT @Mark = (SELECT SUM(Mark) FROM dbo.EP_TFMark)
+		SELECT @Mark = (SELECT ROUND((SUM(Mark) / 4), 2) FROM dbo.EP_TFMark);
 		IF (@Mark <= 0)
 			SELECT @Mark = 0
 			
